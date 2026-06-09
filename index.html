@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crastore 業務ツール</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: #f2f2f2;
+    margin: 0;
+    padding: 40px 20px;
+    color: #333;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .header {
+    background: #fff;
+    padding: 24px 32px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.12);
+    margin-bottom: 24px;
+  }
+  .header-top {
+    height: 4px;
+    background: #2c5f8a;
+    margin: -24px -32px 20px;
+  }
+  .logo {
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #1a1a1a;
+  }
+  .logo .accent { color: #e6622d; }
+  .logo-sub {
+    font-size: 13px;
+    color: #777;
+    margin-top: 4px;
+  }
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .tool-card {
+    background: #fff;
+    padding: 24px 20px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.12);
+    text-decoration: none;
+    color: #333;
+    display: block;
+    border-top: 3px solid #2c5f8a;
+    transition: box-shadow 0.15s;
+  }
+  .tool-card:hover {
+    box-shadow: 0 2px 12px rgba(44,95,138,0.25);
+  }
+  .tool-card.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    border-top-color: #bbb;
+  }
+  .tool-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+  .tool-title {
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  .tool-desc {
+    font-size: 12px;
+    color: #777;
+    line-height: 1.5;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    background: #bbb;
+    color: #fff;
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-top"></div>
+    <div class="logo">CRA<span class="accent">S</span>TORE</div>
+    <div class="logo-sub">業務ツール</div>
+  </div>
+
+  <div class="tools-grid">
+
+    <a class="tool-card" href="estimate.html">
+      <div class="tool-icon">📄</div>
+      <div class="tool-title">見積書・請求書</div>
+      <div class="tool-desc">見積書・請求書の作成とPDF出力</div>
+    </a>
+
+    <div class="tool-card disabled">
+      <div class="tool-icon">💴</div>
+      <div class="tool-title">経費管理</div>
+      <div class="tool-desc">経費の記録・集計・月次レポート</div>
+      <span class="badge">準備中</span>
+    </div>
+
+    <div class="tool-card disabled">
+      <div class="tool-icon">🏗️</div>
+      <div class="tool-title">現場管理</div>
+      <div class="tool-desc">現場情報・工程・進捗管理</div>
+      <span class="badge">準備中</span>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>

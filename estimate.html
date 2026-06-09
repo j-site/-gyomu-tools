@@ -3,509 +3,415 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Crastore 見積書・請求書作成</title>
+<title>Crastore 見積書・請求書 作成</title>
 <style>
+  /* ===== 全体 ===== */
   * { box-sizing: border-box; }
   body {
-    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-    background: #f2f2f2;
+    font-family: "Helvetica Neue", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    background: #e9ebee;
     margin: 0;
-    padding: 20px;
-    color: #333;
+    padding: 18px;
+    color: #222;
+    -webkit-font-smoothing: antialiased;
   }
+
+  /* ===== ツールバー(印刷時は非表示) ===== */
   .toolbar {
-    max-width: 900px;
+    max-width: 794px;
     margin: 0 auto 16px;
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
   }
   .toolbar button {
-    padding: 10px 20px;
-    font-size: 15px;
-    border: none;
-    border-radius: 4px;
+    padding: 9px 18px;
+    font-size: 14px;
+    border: 1px solid #c2c8cf;
+    border-radius: 5px;
     cursor: pointer;
-    background: #ddd;
-    color: #333;
+    background: #fff;
+    color: #444;
+    font-family: inherit;
   }
-  .toolbar button.active {
-    background: #2c5f8a;
-    color: #fff;
-  }
-  .toolbar button.print {
-    margin-left: auto;
-    background: #2c5f8a;
-    color: #fff;
-  }
+  .toolbar button.tab.active { background: #497B9F; color: #fff; border-color: #497B9F; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar button.print { background: #497B9F; color: #fff; border-color: #497B9F; font-weight: bold; }
+  .toolbar .hint { width:100%; font-size:12px; color:#7a828b; margin-top:2px; }
+
+  /* ===== 用紙 (A4) ===== */
+  .sheet-wrap { width: 100%; overflow: hidden; }
   .sheet {
-    max-width: 900px;
+    width: 794px;
+    min-height: 1123px;
     margin: 0 auto;
     background: #fff;
-    padding: 30px 40px 40px;
-    box-shadow: 0 0 6px rgba(0,0,0,0.15);
+    padding: 34px 40px 40px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.18);
+    position: relative;
+    transform-origin: top left;
   }
-  .top-line {
-    height: 4px;
-    background: #2c5f8a;
-    margin: -30px -40px 20px;
-  }
-  .logo-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 10px;
-  }
-  .logo {
-    font-size: 24px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    color: #1a1a1a;
-  }
-  .logo .accent { color: #e6622d; }
-  .doc-date {
-    text-align: right;
-  }
-  .doc-date label {
-    display: block;
-    font-size: 11px;
-    color: #666;
-  }
-  .doc-date input {
-    font-size: 14px;
-    padding: 4px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    text-align: right;
+  .top-line { height: 2px; background: #497B9F; margin-bottom: 14px; }
+
+  /* ヘッダー */
+  .head { display: flex; justify-content: space-between; align-items: flex-start; }
+  .head img.logo { height: 38px; width: auto; }
+  .head .date { font-size: 14px; color: #555; letter-spacing: .5px; padding-top: 16px; }
+
+  /* 宛名 */
+  .addressee { margin: 22px 0 6px; font-size: 19px; }
+  .addressee .nm { border-bottom: 1px solid #888; padding: 0 28px 2px 4px; min-width: 240px; display:inline-block; }
+  .addressee .go { font-size: 15px; margin-left: 6px; }
+
+  /* 金額大見出し */
+  .amount-row { display: flex; align-items: flex-end; margin: 14px 0 26px; }
+  .amount-row .lbl { font-size: 18px; letter-spacing: 2px; white-space: nowrap; padding-right: 18px; padding-bottom: 4px; }
+  .amount-row .val {
+    flex: 1; text-align: center; font-size: 26px; font-weight: 300;
+    border-bottom: 1.5px solid #333; padding-bottom: 3px; letter-spacing: 1px;
   }
 
-  .customer-block {
-    margin: 10px 0 20px;
-  }
-  .customer-block label {
-    display: block;
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 2px;
-  }
-  .customer-block input {
-    font-size: 16px;
-    padding: 6px 0;
-    border: none;
-    border-bottom: 1px solid #ccc;
-    width: 280px;
-    background: transparent;
-  }
+  /* 情報欄 + QR */
+  .info-wrap { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+  .info { width: 62%; }
+  .info .row { display: flex; align-items: flex-end; border-bottom: 1px solid #bdbdbd; padding: 7px 2px 5px; }
+  .info .row .k { width: 92px; font-size: 13px; color: #333; white-space: nowrap; }
+  .info .row .v { flex: 1; font-size: 14px; color: #111; min-height: 18px; outline: none; }
+  .info-wrap .qr { width: 96px; height: 96px; flex: 0 0 96px; }
+  .info-wrap .qr img { width: 96px; height: 96px; display: block; }
 
-  .amount-box {
-    text-align: center;
-    margin: 10px 0 24px;
-  }
-  .amount-box .label {
-    font-size: 16px;
-    margin-bottom: 6px;
-  }
-  .amount-box .value {
-    font-size: 30px;
-    font-weight: bold;
-    border-bottom: 2px solid #333;
-    display: inline-block;
-    padding: 0 30px 4px;
-    min-width: 220px;
-  }
-
-  .meta-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-  }
-  .meta-table td {
-    border-bottom: 1px dotted #999;
-    padding: 6px 4px;
-    font-size: 14px;
-    vertical-align: middle;
-  }
-  .meta-table td.label {
-    width: 110px;
-    color: #555;
-    white-space: nowrap;
-  }
-  .meta-table td input {
-    width: 100%;
-    border: none;
-    font-size: 14px;
-    padding: 4px;
-    background: transparent;
-  }
-
-  table.items {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 16px;
-  }
+  /* 明細テーブル */
+  table.items { width: 100%; border-collapse: collapse; font-size: 13px; }
   table.items th {
-    background: #2c5f8a;
-    color: #fff;
-    padding: 8px 6px;
-    font-size: 13px;
-    text-align: center;
+    background: #497B9F; color: #fff; font-weight: 500; border: 1px solid #3c6a8a;
+    padding: 7px 8px; text-align: left;
   }
-  table.items td {
-    border-bottom: 1px dotted #ccc;
-    padding: 6px;
-    font-size: 14px;
-    text-align: center;
-  }
-  table.items td input {
-    width: 100%;
-    border: none;
-    text-align: center;
-    font-size: 14px;
-    padding: 4px;
-    background: transparent;
-  }
-  table.items td.item input {
-    text-align: left;
-  }
-  table.items td.amount {
-    text-align: right;
-    padding-right: 10px;
-  }
-  table.items tfoot td {
-    border-bottom: 1px dotted #ccc;
-    font-size: 14px;
-    text-align: right;
-    padding: 6px 10px;
-  }
-  table.items tfoot td.label {
-    text-align: right;
-    color: #555;
-    width: 60%;
-  }
-  table.items tfoot tr.total td {
-    border-top: 2px solid #333;
-    border-bottom: none;
-    font-size: 17px;
-    font-weight: bold;
+  table.items td { border: 1px solid #cfd6dc; padding: 6px 8px; height: 30px; vertical-align: middle; }
+  table.items td.num, table.items th.num { text-align: right; }
+  table.items td.ctr, table.items th.ctr { text-align: center; }
+  table.items td[contenteditable]:focus, .info .row .v:focus,
+  .addressee .nm:focus, .remark .body:focus, .head .date:focus { background: #eef6fb; }
+  col.c-detail { width: auto; }
+  col.c-qty { width: 56px; }
+  col.c-unit { width: 56px; }
+  col.c-price { width: 96px; }
+  col.c-amount { width: 104px; }
+
+  /* 合計欄 */
+  table.totals { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: -1px; }
+  table.totals td { border: 1px solid #cfd6dc; padding: 7px 8px; height: 30px; }
+  table.totals td.lbl { text-align: center; background: #fff; width: 96px; }
+  table.totals td.val { text-align: right; width: 104px; }
+  table.totals td.gap { border: none; }
+  table.totals tr.sum td.lbl { font-weight: bold; }
+
+  /* 下部: 備考 + 会社情報 */
+  .footer { margin-top: 22px; display: flex; gap: 18px; align-items: flex-start; }
+  .remark { width: 270px; border: 1px solid #999; padding: 7px 9px; min-height: 78px; }
+  .remark .title { font-size: 11px; color: #555; }
+  .remark .invno { font-size: 11px; color: #555; margin-top: 2px; }
+  .remark .body { font-size: 12px; margin-top: 6px; min-height: 30px; outline: none; }
+  .company { flex: 1; font-size: 15px; line-height: 1.7; padding-top: 2px; }
+  .company a { color: #1155cc; text-decoration: underline; }
+
+  /* 振込先 (請求書) */
+  .bank { border: 1px solid #333; max-width: 430px; margin: 22px auto 8px; padding: 16px 10px; text-align: center; font-size: 15px; line-height: 2.1; }
+  .bank-note { text-align: center; font-size: 13px; line-height: 1.9; margin-bottom: 6px; }
+
+  /* 注記・注文書 (見積書) */
+  .note-small { font-size: 11px; color: #555; margin-top: 12px; }
+  .dashed { border-top: 1px dashed #aaa; margin: 12px 0; }
+  .order-block { margin-top: 6px; }
+  .order-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .order-head .t { font-size: 17px; font-weight: bold; }
+  .order-head .t span { font-size: 12px; font-weight: normal; margin-left: 12px; }
+  .order-head .ymd { font-size: 14px; letter-spacing: 6px; }
+  .order-fields { margin: 18px 0 0 30px; font-size: 15px; }
+  .order-fields .of { display: flex; align-items: flex-end; margin-bottom: 16px; }
+  .order-fields .of .k { width: 90px; }
+  .order-fields .of .ln { width: 280px; border-bottom: 1px solid #555; }
+  .order-fields .of .seal { margin-left: 30px; color: #777; }
+
+  /* 表示切替（既定は非表示。モードに応じて要素タイプ別に表示） */
+  .only-estimate, .only-invoice { display: none !important; }
+  body.mode-estimate span.only-estimate { display: inline !important; }
+  body.mode-estimate div.only-estimate { display: block !important; }
+  body.mode-estimate div.row.only-estimate { display: flex !important; }
+  body.mode-invoice span.only-invoice { display: inline !important; }
+  body.mode-invoice div.only-invoice { display: block !important; }
+
+  /* ===== スマホ対応 ===== */
+  @media (max-width: 840px) {
+    body { padding: 8px; }
+    .toolbar { gap: 6px; }
+    .toolbar button { flex: 1 1 auto; min-height: 44px; font-size: 15px; }
+    .toolbar button.tab { flex: 1 1 30%; }
+    .toolbar button.print { flex: 1 1 100%; }
+    .toolbar .hint { font-size: 11px; }
   }
 
-  .bottom-row {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-  }
-  .bottom-row .left, .bottom-row .right {
-    flex: 1;
-  }
-  .remarks-box {
-    border: 1px solid #999;
-    padding: 8px 10px;
-    height: 100%;
-    min-height: 110px;
-  }
-  .remarks-box .title {
-    font-size: 12px;
-    font-weight: bold;
-    margin-bottom: 4px;
-  }
-  .remarks-box textarea {
-    width: 100%;
-    height: 60px;
-    font-size: 13px;
-    border: none;
-    resize: vertical;
-    background: transparent;
-    padding: 0;
-  }
-  .remarks-box .qualified-no {
-    font-size: 11px;
-    color: #555;
-    margin-top: 6px;
-  }
-  .company-info {
-    font-size: 13px;
-    line-height: 1.7;
-    text-align: right;
-  }
-  .company-info .name {
-    font-weight: bold;
-    font-size: 14px;
-  }
-
-  .bank-box {
-    border: 1px solid #999;
-    border-radius: 4px;
-    padding: 14px;
-    text-align: center;
-    margin: 10px 0 14px;
-    font-size: 15px;
-    line-height: 1.8;
-  }
-  .bank-note {
-    text-align: center;
-    font-size: 13px;
-    color: #444;
-    line-height: 1.6;
-    margin-bottom: 20px;
-  }
-
-  .order-section {
-    border-top: 1px dotted #999;
-    padding-top: 14px;
-    font-size: 13px;
-  }
-  .order-section .heading {
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-  .order-section .heading .sub {
-    font-weight: normal;
-    margin-left: 10px;
-  }
-  .order-fields {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-  }
-  .order-fields .field {
-    margin-bottom: 10px;
-  }
-  .order-fields .field label {
-    display: inline-block;
-    width: 70px;
-    color: #555;
-  }
-  .order-fields .field .line {
-    display: inline-block;
-    border-bottom: 1px solid #999;
-    width: 220px;
-    height: 1.4em;
-  }
-  .order-fields .seal {
-    border: 1px solid #999;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    color: #999;
-  }
-  .order-note {
-    font-size: 12px;
-    color: #555;
-    margin-bottom: 14px;
-  }
-
+  /* 印刷（画面用の縮小は解除してA4で出力） */
   @media print {
     body { background: #fff; padding: 0; }
     .toolbar { display: none; }
-    .sheet { box-shadow: none; max-width: 100%; }
-    input, textarea {
-      border: none !important;
-      background: transparent !important;
-    }
+    .sheet-wrap { height: auto !important; overflow: visible; }
+    .sheet { box-shadow: none; margin: 0; width: 100%; min-height: auto; padding: 12mm 12mm; transform: none !important; }
+    @page { size: A4; margin: 0; }
   }
 </style>
 </head>
-<body>
+<body class="mode-estimate">
 
-<div class="toolbar">
-  <button id="btnEstimate" class="active">見積書</button>
-  <button id="btnInvoice">請求書</button>
-  <button id="btnPrint" class="print">PDF出力（印刷）</button>
-</div>
+  <div class="toolbar">
+    <button class="tab active" id="tabEstimate" onclick="setMode('estimate')">見積書</button>
+    <button class="tab" id="tabInvoice" onclick="setMode('invoice')">請求書</button>
+    <span class="spacer"></span>
+    <button onclick="addRow()">＋ 明細行を追加</button>
+    <button class="print" onclick="window.print()">🖨 印刷 / PDF保存</button>
+    <div class="hint">各項目は直接クリックして入力できます。数量・単価を入れると金額・合計は自動計算されます。</div>
+  </div>
 
-<div class="sheet">
-  <div class="top-line"></div>
+  <div class="sheet-wrap" id="sheetWrap">
+  <div class="sheet" id="sheet">
+    <div class="top-line"></div>
 
-  <div class="logo-row">
-    <div class="logo">CRA<span class="accent">S</span>TORE</div>
-    <div class="doc-date">
-      <label id="docDateLabel">発行日</label>
-      <input type="date" id="docDate">
+    <!-- ヘッダー -->
+    <div class="head">
+      <img class="logo" src="data:image/jpeg;base64,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" alt="CRASTORE">
+      <div class="date" id="docDate" contenteditable="true">2026/06/01</div>
     </div>
-  </div>
 
-  <div class="customer-block">
-    <label>お客様名</label>
-    <input type="text" id="customerName" placeholder="〇〇 御中">
-  </div>
+    <!-- 宛名 -->
+    <div class="addressee">
+      <span class="nm" contenteditable="true" id="clientName"></span><span class="go">御中</span>
+    </div>
 
-  <div class="amount-box">
-    <div class="label" id="amountLabel">御見積金額</div>
-    <div class="value" id="amountValue">¥0</div>
-  </div>
+    <!-- 金額大見出し -->
+    <div class="amount-row">
+      <div class="lbl"><span class="only-estimate">御見積金額</span><span class="only-invoice">御請求金額</span></div>
+      <div class="val" id="grandTotalBig">¥0</div>
+    </div>
 
-  <table class="meta-table">
-    <tr>
-      <td class="label" id="docNoLabel">見積書No.</td>
-      <td><input type="text" id="docNo" placeholder=""></td>
-    </tr>
-    <tr>
-      <td class="label">現場住所</td>
-      <td><input type="text" id="siteLocation"></td>
-    </tr>
-    <tr>
-      <td class="label">工事内容</td>
-      <td><input type="text" id="workContent"></td>
-    </tr>
-    <tr id="rowExpiry">
-      <td class="label">有効期限</td>
-      <td><input type="text" id="expiry" placeholder="例：発行日より30日間"></td>
-    </tr>
-    <tr id="rowSchedule" style="display:none;">
-      <td class="label">工事日程</td>
-      <td><input type="text" id="schedule" placeholder="例：2026/06/10〜2026/06/20"></td>
-    </tr>
-  </table>
+    <!-- 情報欄 + QR -->
+    <div class="info-wrap">
+      <div class="info">
+        <div class="row"><div class="k"><span class="only-estimate">見積書No.</span><span class="only-invoice">請求書No.</span></div><div class="v" contenteditable="true" id="docNo"></div></div>
+        <div class="row"><div class="k">現場住所</div><div class="v" contenteditable="true" id="siteAddr"></div></div>
+        <div class="row"><div class="k">工事内容</div><div class="v" contenteditable="true" id="workName"></div></div>
+        <div class="row only-estimate"><div class="k">有効期限</div><div class="v" contenteditable="true" id="validUntil"></div></div>
+      </div>
+      <div class="qr"><img src="data:image/png;base64,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" alt="QR"></div>
+    </div>
 
-  <table class="items">
-    <thead>
+    <!-- 明細 -->
+    <table class="items">
+      <colgroup>
+        <col class="c-detail"><col class="c-qty"><col class="c-unit"><col class="c-price"><col class="c-amount">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>詳細</th><th class="ctr">数量</th><th class="ctr">単位</th><th class="num">単価</th><th class="num">金額</th>
+        </tr>
+      </thead>
+      <tbody id="itemBody"><!-- JSで行を生成 --></tbody>
+    </table>
+
+    <!-- 合計 -->
+    <table class="totals">
       <tr>
-        <th style="width:34%">詳細</th>
-        <th style="width:12%">数量</th>
-        <th style="width:12%">単位</th>
-        <th style="width:16%">単価</th>
-        <th style="width:26%">金額</th>
+        <td class="gap"></td><td class="gap"></td><td class="gap"></td>
+        <td class="lbl">小計</td><td class="val" id="subtotal">0</td>
       </tr>
-    </thead>
-    <tbody id="itemsBody"></tbody>
-    <tfoot>
-      <tr><td class="label" colspan="4">小計</td><td id="subtotal">¥0</td></tr>
-      <tr><td class="label" colspan="4">税額（10%）</td><td id="tax">¥0</td></tr>
-      <tr class="total"><td class="label" colspan="4">合計</td><td id="total">¥0</td></tr>
-    </tfoot>
-  </table>
+      <tr>
+        <td class="gap"></td><td class="gap"></td><td class="lbl">税額</td>
+        <td class="lbl" id="taxRate">10%</td><td class="val" id="taxAmount">0</td>
+      </tr>
+      <tr class="sum">
+        <td class="gap"></td><td class="gap"></td><td class="gap"></td>
+        <td class="lbl">合計</td><td class="val" id="grandTotal">0</td>
+      </tr>
+    </table>
 
-  <div id="bankSection" style="display:none;">
-    <div class="bank-box">
-      三井住友銀行　若江岩田 支店<br>
-      普通　1489227　ｶ)ｸﾗｽﾄｱ
-    </div>
-    <div class="bank-note">
-      お支払いは上記口座にお願いします<br>
-      今後ともどうぞよろしくお願い申し上げます
-    </div>
-  </div>
-
-  <div class="bottom-row">
-    <div class="left">
-      <div class="remarks-box">
-        <div class="title">備考欄</div>
-        <textarea id="remarks" placeholder="備考を入力してください"></textarea>
-        <div class="qualified-no">適格請求書発行事業者番号：T9122001026672</div>
+    <!-- ===== 請求書: 振込先 ===== -->
+    <div class="only-invoice">
+      <div class="bank">
+        三井住友銀行　若江岩田 支店<br>
+        普通　1489227　カ)クラストア
+      </div>
+      <div class="bank-note">
+        お支払いは上記口座にお願いします<br>
+        今後ともどうぞよろしくお願い申し上げます
       </div>
     </div>
-    <div class="right">
-      <div class="company-info">
-        <div class="name">株式会社Crastore</div>
+
+    <!-- ===== 下部: 備考 + 会社情報 ===== -->
+    <div class="footer">
+      <div class="remark">
+        <div class="title">備考欄</div>
+        <div class="invno">適格請求書発行事業者番号：T9122001026672</div>
+        <div class="body" contenteditable="true" id="remark"></div>
+      </div>
+      <div class="company">
         〒541-0057<br>
         大阪市中央区北久宝寺町2-6-10 ニューライフ船場404号<br>
-        WEB：<a href="https://crastore.xyz/" target="_blank" rel="noopener">https://crastore.xyz/</a><br>
+        WEB：<a href="https://crastore.xyz/">https://crastore.xyz/</a><br>
         TEL：050-3700-3996
       </div>
     </div>
-  </div>
 
-  <div id="orderSection" class="order-section">
-    <div class="order-note">上記内容に基づき本件を正式発注いただける場合には下記注文書にご署名、捺印をお願いいたします。内容に変更を加えたものは無効となります。</div>
-    <div class="heading">注文書　<span class="sub">上記内容に承諾し、本件を正式に発注します　　　　年　　月　　日</span></div>
-    <div class="order-fields">
-      <div>
-        <div class="field"><label>御社名：</label><span class="line"></span></div>
-        <div class="field"><label>ご担当：</label><span class="line"></span></div>
+    <!-- ===== 見積書: 注記 + 注文書 ===== -->
+    <div class="only-estimate">
+      <div class="note-small">上記内容に基づき本件を正式発注いただける場合には下記注文書にご署名、捺印をお願いいたします。内容に変更を加えたものは無効となります。</div>
+      <div class="dashed"></div>
+      <div class="order-block">
+        <div class="order-head">
+          <div class="t">注文書 <span>上記内容に承諾し、本件を正式に発注します</span></div>
+          <div class="ymd">年　　月　　日</div>
+        </div>
+        <div class="order-fields">
+          <div class="of"><div class="k">御社名：</div><div class="ln"></div></div>
+          <div class="of"><div class="k">ご担当：</div><div class="ln"></div><div class="seal">印</div></div>
+        </div>
       </div>
-      <div class="seal">印</div>
     </div>
+
   </div>
-</div>
+  </div><!-- /.sheet-wrap -->
 
 <script>
-  const ROW_COUNT = 10;
-  const itemsBody = document.getElementById('itemsBody');
+/* ============================================================
+   ★ ここに工事内容を入力 ★
+   下の data を書き換えるだけで、見積書・請求書の両方に反映されます。
+   （ブラウザ上で各項目を直接クリックして編集することもできます）
 
-  for (let i = 0; i < ROW_COUNT; i++) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="item"><input type="text" class="item-name"></td>
-      <td><input type="number" class="item-qty" min="0" step="any"></td>
-      <td><input type="text" class="item-unit"></td>
-      <td><input type="number" class="item-price" min="0" step="any"></td>
-      <td class="amount"><span class="item-amount">¥0</span></td>
-    `;
-    itemsBody.appendChild(tr);
-  }
+   items: 明細行。金額は qty(数量) × price(単価) で自動計算されます。
+          「一式」など数量無しの場合は qty を空にして amount を直接指定:
+          { detail:"○○工事 一式", unit:"式", amount:300000 }
+   ============================================================ */
+const data = {
+  date:       "2026/06/01",       // 発行日
+  clientName: "",                 // 宛名（御中の前）
+  docNo:      "",                 // 見積書No. / 請求書No.
+  siteAddr:   "",                 // 現場住所
+  workName:   "",                 // 工事内容
+  validUntil: "発行日より30日間",  // 有効期限（見積書のみ）
+  remark:     "",                 // 備考欄の自由記入
+  taxRate:    10,                 // 消費税率(%)
+  items: [
+    // 例: { detail: "○○工事 一式", qty: 1, unit: "式", price: 100000 },
+    { detail: "", qty: "", unit: "", price: "" }
+  ]
+};
 
-  function formatYen(num) {
-    if (!num) return '';
-    return '¥' + Math.round(num).toLocaleString('ja-JP');
-  }
+const MIN_ROWS = 12; // 明細の最低表示行数（テンプレートの見た目を保つため空行で埋める）
 
-  function recalc() {
-    let subtotal = 0;
-    document.querySelectorAll('#itemsBody tr').forEach(tr => {
-      const qty = parseFloat(tr.querySelector('.item-qty').value) || 0;
-      const price = parseFloat(tr.querySelector('.item-price').value) || 0;
-      const amount = qty * price;
-      tr.querySelector('.item-amount').textContent = formatYen(amount);
-      subtotal += amount;
-    });
-    const tax = subtotal * 0.1;
-    const total = subtotal + tax;
-    document.getElementById('subtotal').textContent = formatYen(subtotal);
-    document.getElementById('tax').textContent = formatYen(tax);
-    document.getElementById('total').textContent = formatYen(total);
-    document.getElementById('amountValue').textContent = formatYen(total);
-  }
+function num(n){ return Number(n||0).toLocaleString("ja-JP"); }
+function yen(n){ return "¥" + num(n); }
+function parseNum(s){ const v = parseFloat(String(s).replace(/[^0-9.\-]/g,"")); return isNaN(v)?0:v; }
 
-  itemsBody.addEventListener('input', recalc);
-  recalc();
+function rowAmount(it){
+  if (it.amount !== undefined && it.amount !== "" && it.amount !== null) return parseNum(it.amount);
+  const q = parseNum(it.qty), p = parseNum(it.price);
+  if (q && p) return q * p;
+  return 0;
+}
 
-  // 見積書 / 請求書 切り替え
-  const btnEstimate = document.getElementById('btnEstimate');
-  const btnInvoice = document.getElementById('btnInvoice');
-  const amountLabel = document.getElementById('amountLabel');
-  const docDateLabel = document.getElementById('docDateLabel');
-  const docNoLabel = document.getElementById('docNoLabel');
-  const rowExpiry = document.getElementById('rowExpiry');
-  const rowSchedule = document.getElementById('rowSchedule');
-  const bankSection = document.getElementById('bankSection');
-  const orderSection = document.getElementById('orderSection');
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
-  function setMode(mode) {
-    if (mode === 'estimate') {
-      amountLabel.textContent = '御見積金額';
-      docDateLabel.textContent = '発行日';
-      docNoLabel.textContent = '見積書No.';
-      rowExpiry.style.display = '';
-      rowSchedule.style.display = 'none';
-      bankSection.style.display = 'none';
-      orderSection.style.display = '';
-      btnEstimate.classList.add('active');
-      btnInvoice.classList.remove('active');
-    } else {
-      amountLabel.textContent = '御請求金額';
-      docDateLabel.textContent = '請求日';
-      docNoLabel.textContent = '請求書No.';
-      rowExpiry.style.display = 'none';
-      rowSchedule.style.display = '';
-      bankSection.style.display = '';
-      orderSection.style.display = 'none';
-      btnInvoice.classList.add('active');
-      btnEstimate.classList.remove('active');
-    }
-  }
-
-  btnEstimate.addEventListener('click', () => setMode('estimate'));
-  btnInvoice.addEventListener('click', () => setMode('invoice'));
-
-  // PDF出力（印刷ダイアログから保存）
-  document.getElementById('btnPrint').addEventListener('click', () => {
-    window.print();
+function renderRows(){
+  const tb = document.getElementById("itemBody");
+  tb.innerHTML = "";
+  const rows = data.items.slice();
+  while (rows.length < MIN_ROWS) rows.push({ detail:"", qty:"", unit:"", price:"" });
+  rows.forEach((it, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td contenteditable="true" data-f="detail" data-i="'+i+'">'+esc(it.detail)+'</td>'+
+      '<td class="num" contenteditable="true" data-f="qty" data-i="'+i+'">'+esc(it.qty)+'</td>'+
+      '<td class="ctr" contenteditable="true" data-f="unit" data-i="'+i+'">'+esc(it.unit)+'</td>'+
+      '<td class="num" contenteditable="true" data-f="price" data-i="'+i+'">'+(it.price!==""&&it.price!=null?num(it.price):"")+'</td>'+
+      '<td class="num amt" contenteditable="true" data-f="amount" data-i="'+i+'">'+(rowAmount(it)?num(rowAmount(it)):"")+'</td>';
+    tb.appendChild(tr);
   });
-</script>
+  tb.querySelectorAll('td[contenteditable]').forEach(td=>{
+    td.addEventListener('input', onCellInput);
+  });
+}
 
+function onCellInput(e){
+  const td = e.target, i = +td.dataset.i, f = td.dataset.f;
+  while (data.items.length <= i) data.items.push({ detail:"", qty:"", unit:"", price:"" });
+  data.items[i][f] = td.textContent;
+  if (f === "qty" || f === "price") delete data.items[i].amount; // 数量×単価を入れたら自動計算
+  recalc();
+}
+
+function recalc(){
+  let sub = 0;
+  document.querySelectorAll('#itemBody tr').forEach(tr=>{
+    const c = tr.children;
+    const q = parseNum(c[1].textContent), p = parseNum(c[3].textContent);
+    let amt;
+    if (q && p) { amt = q * p; c[4].textContent = num(amt); } // 数量×単価 → 金額を自動表示
+    else { amt = parseNum(c[4].textContent); }                // 一式・金額直接入力はそのまま
+    sub += amt;
+  });
+  const rate = data.taxRate || 0;
+  const tax = Math.floor(sub * rate / 100);
+  const total = sub + tax;
+  document.getElementById("subtotal").textContent = num(sub);
+  document.getElementById("taxRate").textContent = rate + "%";
+  document.getElementById("taxAmount").textContent = num(tax);
+  document.getElementById("grandTotal").textContent = num(total);
+  document.getElementById("grandTotalBig").textContent = yen(total);
+  fitSheet();
+}
+
+function bindField(id, key){
+  const el = document.getElementById(id);
+  if (data[key]) el.textContent = data[key];
+  el.addEventListener('input', ()=>{ data[key] = el.textContent; });
+}
+
+function setMode(m){
+  document.body.className = "mode-" + m;
+  document.getElementById("tabEstimate").classList.toggle("active", m==="estimate");
+  document.getElementById("tabInvoice").classList.toggle("active", m==="invoice");
+  document.title = (m==="estimate"?"御見積書":"御請求書") + " - Crastore";
+  fitSheet();
+}
+
+function addRow(){
+  data.items.push({ detail:"", qty:"", unit:"", price:"" });
+  renderRows(); recalc();
+}
+
+/* 画面幅に合わせて用紙(A4=794px)を縮小表示。印刷時はCSSで解除されA4出力 */
+const SHEET_W = 794;
+function fitSheet(){
+  const wrap = document.getElementById("sheetWrap");
+  const sheet = document.getElementById("sheet");
+  if (!wrap || !sheet) return;
+  const scale = Math.min(1, wrap.clientWidth / SHEET_W);
+  sheet.style.transform = scale < 1 ? "scale(" + scale + ")" : "none";
+  wrap.style.height = (sheet.offsetHeight * scale) + "px";
+}
+window.addEventListener("resize", fitSheet);
+window.addEventListener("orientationchange", fitSheet);
+
+// 初期化
+bindField("docDate","date");
+bindField("clientName","clientName");
+bindField("docNo","docNo");
+bindField("siteAddr","siteAddr");
+bindField("workName","workName");
+bindField("validUntil","validUntil");
+bindField("remark","remark");
+renderRows();
+recalc();
+fitSheet();
+window.addEventListener("load", fitSheet);
+</script>
 </body>
 </html>

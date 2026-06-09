@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>発行済み書類 - Crastore</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Helvetica Neue","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    background:#e9ebee; margin:0; padding:16px; color:#222; }
+  .wrap { max-width:680px; margin:0 auto; }
+  .top-line { height:2px; background:#497B9F; }
+  h1 { font-size:18px; margin:14px 2px; }
+  .new { display:inline-block; background:#497B9F; color:#fff; text-decoration:none;
+    padding:10px 16px; border-radius:6px; font-size:14px; margin-bottom:14px; }
+  .filters { margin:0 0 10px; display:flex; gap:6px; }
+  .filters button { flex:1; padding:8px; border:1px solid #c2c8cf; background:#fff; border-radius:5px;
+    font-size:13px; cursor:pointer; min-height:40px; }
+  .filters button.active { background:#497B9F; color:#fff; border-color:#497B9F; }
+  ul { list-style:none; margin:0; padding:0; }
+  a.doc { display:flex; align-items:center; gap:10px; background:#fff; text-decoration:none; color:#222;
+    padding:13px 14px; border-radius:6px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  a.doc:active { background:#eef6fb; }
+  .tag { font-size:11px; color:#fff; border-radius:4px; padding:2px 7px; white-space:nowrap; }
+  .tag.invoice { background:#c0622d; }
+  .tag.estimate { background:#497B9F; }
+  .meta { flex:1; min-width:0; }
+  .meta .no { font-size:13px; color:#666; }
+  .meta .nm { font-size:15px; font-weight:bold; }
+  .meta .sub { font-size:12px; color:#888; }
+  .chev { color:#bbb; font-size:18px; }
+  .empty { color:#888; font-size:14px; padding:20px 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-line"></div>
+  <h1>発行済み 見積書・請求書</h1>
+  <a class="new" href="estimate.html">＋ 新規作成（空フォーム）</a>
+  <div class="filters">
+    <button data-f="all" class="active" onclick="setFilter('all')">すべて</button>
+    <button data-f="estimate" onclick="setFilter('estimate')">見積書(MS)</button>
+    <button data-f="invoice" onclick="setFilter('invoice')">請求書(IV)</button>
+  </div>
+  <ul id="list"><li class="empty">読み込み中…</li></ul>
+</div>
+<script>
+let docs = [], filter = "all";
+function render(){
+  const ul = document.getElementById("list");
+  const items = docs.filter(d => filter==="all" || d.type===filter);
+  if (!items.length){ ul.innerHTML = '<li class="empty">該当する書類がありません。</li>'; return; }
+  ul.innerHTML = items.map(d => {
+    const label = d.type==="invoice" ? "請求書" : "見積書";
+    return '<a class="doc" href="estimate.html?doc='+encodeURIComponent(d.docNo)+'">'
+      + '<span class="tag '+d.type+'">'+label+'</span>'
+      + '<span class="meta"><span class="nm">'+(d.clientName||"")+' 御中</span>'
+      + '<span class="sub">'+(d.workName||"")+'</span>'
+      + '<span class="no">'+d.docNo+'　'+(d.date||"")+'</span></span>'
+      + '<span class="chev">›</span></a>';
+  }).join("");
+}
+function setFilter(f){
+  filter = f;
+  document.querySelectorAll(".filters button").forEach(b=>b.classList.toggle("active", b.dataset.f===f));
+  render();
+}
+fetch("documents/index.json", {cache:"no-store"})
+  .then(r=>r.json())
+  .then(d=>{ docs = d; render(); })
+  .catch(e=>{ document.getElementById("list").innerHTML='<li class="empty">一覧を読み込めませんでした。</li>'; console.error(e); });
+</script>
+</body>
+</html>

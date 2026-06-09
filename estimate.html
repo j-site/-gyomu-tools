@@ -62,7 +62,10 @@
   /* 宛名 */
   .addressee { margin: 22px 0 6px; font-size: 19px; }
   .addressee .nm { border-bottom: 1px solid #888; padding: 0 28px 2px 4px; min-width: 240px; display:inline-block; }
-  .addressee .go { font-size: 15px; margin-left: 6px; }
+  .addressee .go { font-size: 15px; margin-left: 6px; cursor: pointer; user-select: none;
+    border: 1px solid #bbb; border-radius: 4px; padding: 1px 7px; background: #f8f8f8; }
+  .addressee .go:hover { background: #eef6fb; border-color: #497B9F; }
+  body.viewing .addressee .go { cursor: default; border-color: transparent; background: transparent; padding: 1px 0; }
 
   /* 金額大見出し */
   .amount-row { display: flex; align-items: flex-end; margin: 14px 0 26px; }
@@ -151,12 +154,23 @@
     .toolbar .hint { font-size: 11px; }
   }
 
-  /* 印刷（画面用の縮小は解除してA4で出力） */
+  /* 閲覧モード（保存書類をURLで開いたとき）は編集系ボタンを隠す */
+  body.viewing .toolbar button.tab,
+  body.viewing #btnAddRow,
+  body.viewing .toolbar .hint { display: none; }
+
+  /* 印刷（画面用の縮小は解除してA4で出力。1ページに収める圧縮） */
   @media print {
     body { background: #fff; padding: 0; }
     .toolbar { display: none; }
     .sheet-wrap { height: auto !important; overflow: visible; }
     .sheet { box-shadow: none; margin: 0; width: 100%; min-height: auto; padding: 12mm 12mm; transform: none !important; }
+    table.items td { height: 27px; }
+    .amount-row { margin: 10px 0 18px; }
+    .info-wrap { margin-bottom: 12px; }
+    .bank { margin: 14px auto 6px; padding: 12px 10px; }
+    .bank-note { margin-bottom: 4px; }
+    .footer { margin-top: 14px; }
     @page { size: A4; margin: 0; }
   }
 </style>
@@ -167,7 +181,7 @@
     <button class="tab active" id="tabEstimate" onclick="setMode('estimate')">見積書</button>
     <button class="tab" id="tabInvoice" onclick="setMode('invoice')">請求書</button>
     <span class="spacer"></span>
-    <button onclick="addRow()">＋ 明細行を追加</button>
+    <button id="btnAddRow" onclick="addRow()">＋ 明細行を追加</button>
     <button class="print" onclick="window.print()">🖨 印刷 / PDF保存</button>
     <div class="hint">各項目は直接クリックして入力できます。数量・単価を入れると金額・合計は自動計算されます。</div>
   </div>
@@ -184,7 +198,7 @@
 
     <!-- 宛名 -->
     <div class="addressee">
-      <span class="nm" contenteditable="true" id="clientName"></span><span class="go">御中</span>
+      <span class="nm" contenteditable="true" id="clientName"></span><span class="go" id="honorific" title="タップで切替">御中</span>
     </div>
 
     <!-- 金額大見出し -->
@@ -304,7 +318,8 @@ const data = {
   ]
 };
 
-const MIN_ROWS = 12; // 明細の最低表示行数（テンプレートの見た目を保つため空行で埋める）
+// 明細の最低表示行数（請求書は振込先欄があるぶん少なめにして1ページに収める）
+function minRows(){ return document.body.classList.contains("mode-invoice") ? 9 : 12; }
 
 function num(n){ return Number(n||0).toLocaleString("ja-JP"); }
 function yen(n){ return "¥" + num(n); }
@@ -323,7 +338,7 @@ function renderRows(){
   const tb = document.getElementById("itemBody");
   tb.innerHTML = "";
   const rows = data.items.slice();
-  while (rows.length < MIN_ROWS) rows.push({ detail:"", qty:"", unit:"", price:"" });
+  while (rows.length < minRows()) rows.push({ detail:"", qty:"", unit:"", price:"" });
   rows.forEach((it, i) => {
     const tr = document.createElement("tr");
     tr.innerHTML =
@@ -375,11 +390,47 @@ function bindField(id, key){
 }
 
 function setMode(m){
-  document.body.className = "mode-" + m;
+  const viewing = document.body.classList.contains("viewing");
+  document.body.className = "mode-" + m + (viewing ? " viewing" : "");
   document.getElementById("tabEstimate").classList.toggle("active", m==="estimate");
   document.getElementById("tabInvoice").classList.toggle("active", m==="invoice");
   document.title = (m==="estimate"?"御見積書":"御請求書") + " - Crastore";
-  fitSheet();
+  renderRows();
+  recalc();
+}
+
+/* data に値をまとめて反映（保存済み書類の読み込み・一括入力に使用） */
+const FIELD_IDS = { date:"docDate", clientName:"clientName", docNo:"docNo",
+  siteAddr:"siteAddr", workName:"workName", validUntil:"validUntil", remark:"remark" };
+function applyData(d){
+  if (d.items) data.items = d.items;
+  for (const k in FIELD_IDS){
+    if (k in d) data[k] = d[k];
+    const el = document.getElementById(FIELD_IDS[k]);
+    if (el) el.textContent = data[k] || "";
+  }
+  if (typeof d.taxRate === "number") data.taxRate = d.taxRate;
+  // 敬称（御中 / 様）
+  if (d.honorific) document.getElementById("honorific").textContent = d.honorific;
+  const m = d.type === "estimate" ? "estimate"
+          : d.type === "invoice"  ? "invoice"
+          : (document.body.classList.contains("mode-invoice") ? "invoice" : "estimate");
+  setMode(m); // renderRows + recalc を含む
+}
+
+/* documents/<id>.json を読み込んで表示（スマホでURLを開く運用） */
+async function loadDoc(id){
+  try {
+    const res = await fetch("documents/" + encodeURIComponent(id) + ".json", { cache:"no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const d = await res.json();
+    document.body.classList.add("viewing");
+    applyData(d);
+    if (new URLSearchParams(location.search).has("print")) setTimeout(()=>window.print(), 600);
+  } catch (e) {
+    console.error("書類の読み込みに失敗しました:", id, e);
+    alert("書類「" + id + "」を読み込めませんでした。URLをご確認ください。");
+  }
 }
 
 function addRow(){
@@ -400,6 +451,12 @@ function fitSheet(){
 window.addEventListener("resize", fitSheet);
 window.addEventListener("orientationchange", fitSheet);
 
+// 敬称トグル（御中 ↔ 様）
+document.getElementById("honorific").addEventListener("click", function(){
+  if (document.body.classList.contains("viewing")) return;
+  this.textContent = this.textContent === "御中" ? "様" : "御中";
+});
+
 // 初期化
 bindField("docDate","date");
 bindField("clientName","clientName");
@@ -408,8 +465,14 @@ bindField("siteAddr","siteAddr");
 bindField("workName","workName");
 bindField("validUntil","validUntil");
 bindField("remark","remark");
-renderRows();
-recalc();
+
+const _docId = new URLSearchParams(location.search).get("doc");
+if (_docId) {
+  loadDoc(_docId);          // 保存済み書類を表示
+} else {
+  renderRows();             // 通常（新規作成）
+  recalc();
+}
 fitSheet();
 window.addEventListener("load", fitSheet);
 </script>

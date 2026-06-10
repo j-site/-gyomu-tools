@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>業者見積の合算 - Crastore</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Helvetica Neue","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    background:#e9ebee; margin:0; padding:16px; color:#222; }
+  .wrap { max-width:640px; margin:0 auto; padding-bottom:90px; }
+  .top-line { height:3px; background:#497B9F; border-radius:2px; }
+  h1 { font-size:18px; margin:14px 2px 4px; }
+  .lead { font-size:13px; color:#666; margin:0 2px 14px; line-height:1.6; }
+  .card { background:#fff; border-radius:8px; padding:14px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  textarea { width:100%; border:1px solid #c2c8cf; border-radius:6px; padding:10px; font-size:14px;
+    font-family:inherit; height:96px; }
+  textarea:focus { outline:2px solid #497B9F; border-color:#497B9F; }
+  .loadBtn { width:100%; padding:13px; font-size:15px; font-weight:bold; background:#497B9F; color:#fff;
+    border:none; border-radius:8px; cursor:pointer; margin-top:8px; }
+
+  /* 業者カード */
+  .vendor { border-left:4px solid #497B9F; }
+  .v-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .v-name { flex:1; font-size:15px; font-weight:bold; min-width:0; }
+  .v-sub { font-size:14px; color:#497B9F; font-weight:bold; white-space:nowrap; }
+  .v-move { display:flex; gap:4px; }
+  .v-move button { width:38px; height:38px; border:1px solid #c2c8cf; background:#f7f8fa; border-radius:6px;
+    font-size:16px; cursor:pointer; }
+  .v-move button:disabled { opacity:.3; }
+  .item-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-top:1px solid #eef0f3; }
+  .item-row input[type=checkbox] { width:22px; height:22px; flex:0 0 22px; }
+  .item-main { flex:1; min-width:0; }
+  .item-main input.detail { width:100%; border:none; border-bottom:1px dashed #ccd2d8; font-size:14px;
+    padding:2px 0; font-family:inherit; background:transparent; }
+  .item-main input.detail:focus { outline:none; border-bottom:1.5px solid #497B9F; }
+  .item-meta { font-size:12px; color:#888; margin-top:3px; display:flex; align-items:center; gap:4px; }
+  .item-meta input.price { width:90px; border:1px solid #ccd2d8; border-radius:4px; padding:3px 6px;
+    font-size:13px; text-align:right; font-family:inherit; }
+  .item-amt { font-size:14px; font-weight:bold; white-space:nowrap; min-width:84px; text-align:right; }
+  .row-off { opacity:.4; }
+
+  /* 下部固定バー */
+  .bar { position:fixed; left:0; right:0; bottom:0; background:#fff; box-shadow:0 -2px 10px rgba(0,0,0,.12);
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .bar-in { max-width:640px; margin:0 auto; display:flex; align-items:center; gap:12px; }
+  .bar .total { flex:1; font-size:13px; color:#555; }
+  .bar .total b { font-size:19px; color:#222; }
+  .bar .makeBtn { padding:13px 18px; font-size:15px; font-weight:bold; background:#c0622d; color:#fff;
+    border:none; border-radius:8px; cursor:pointer; white-space:nowrap; }
+  .empty-note { color:#888; font-size:13px; padding:8px 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-line"></div>
+  <h1>業者見積の合算</h1>
+  <p class="lead">業者から届いたリンクをまとめて貼り付けてください（複数OK・LINEの文章ごとでもOK）。<br>
+  業者ごとの金額を確認し、工程順に並べ替えて1枚の見積書にまとめられます。</p>
+
+  <div class="card">
+    <textarea id="links" placeholder="https://…estimate.html?d=xxxx
+https://…estimate.html?d=yyyy"></textarea>
+    <button class="loadBtn" onclick="loadLinks()">読み込む</button>
+  </div>
+
+  <div id="vendors"></div>
+</div>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="total">選択中の合計（税抜）<br><b id="grand">¥0</b></div>
+    <button class="makeBtn" onclick="makeEstimate()">見積書にまとめる →</button>
+  </div>
+</div>
+
+<script>
+let vendors = [];
+
+function b64decode(s){
+  return JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g,"+").replace(/_/g,"/")))));
+}
+function b64encode(obj){
+  return btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
+    .replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function num(n){ return Number(n||0).toLocaleString("ja-JP"); }
+function rowAmount(it){
+  if (it.amount != null && it.amount !== "") return Number(it.amount)||0;
+  return (Number(it.qty)||0) * (Number(it.price)||0);
+}
+
+function loadLinks(){
+  const text = document.getElementById("links").value;
+  const tokens = [...text.matchAll(/[?&]d=([A-Za-z0-9_-]+)/g)].map(m=>m[1]);
+  if (!tokens.length){ alert("リンクが見つかりませんでした。estimate.html?d=… を含むリンクを貼り付けてください。"); return; }
+  vendors = [];
+  tokens.forEach((t,i) => {
+    try {
+      const d = b64decode(t);
+      const nm = (d.remark||"").match(/【(.+?)\s*入力分】/);
+      vendors.push({
+        name: nm ? nm[1] : "業者" + (i+1),
+        workName: d.workName||"", siteAddr: d.siteAddr||"",
+        items: (d.items||[]).map(it => Object.assign({checked:true}, it))
+      });
+    } catch(e){ console.error("リンクの解析に失敗:", e); }
+  });
+  if (!vendors.length){ alert("リンクのデータを読み込めませんでした。"); return; }
+  render();
+}
+
+function render(){
+  const box = document.getElementById("vendors");
+  box.innerHTML = vendors.map((v,vi) => {
+    const sub = v.items.reduce((s,it)=> s + (it.checked ? rowAmount(it) : 0), 0);
+    const rows = v.items.map((it,ii) => {
+      const meta = (it.qty ? it.qty + (it.unit||"") + " × ¥" : "¥");
+      return '<div class="item-row'+(it.checked?'':' row-off')+'">'
+        + '<input type="checkbox" '+(it.checked?'checked':'')+' onchange="toggleItem('+vi+','+ii+',this.checked)">'
+        + '<div class="item-main">'
+        + '<input class="detail" value="'+escAttr(it.detail||"")+'" onchange="editDetail('+vi+','+ii+',this.value)">'
+        + '<div class="item-meta">'+(it.qty?escAttr(String(it.qty))+(escAttr(it.unit||""))+' ×':'')
+        + ' <input class="price" inputmode="numeric" value="'+(it.amount!=null?it.amount:it.price||0)+'"'
+        + ' onchange="editPrice('+vi+','+ii+',this.value)">円</div>'
+        + '</div>'
+        + '<div class="item-amt">¥'+num(rowAmount(it))+'</div>'
+        + '</div>';
+    }).join("");
+    return '<div class="card vendor">'
+      + '<div class="v-head">'
+      + '<div class="v-name">'+escAttr(v.name)+'</div>'
+      + '<div class="v-sub">¥'+num(sub)+'</div>'
+      + '<div class="v-move">'
+      + '<button onclick="moveV('+vi+',-1)" '+(vi===0?'disabled':'')+'>↑</button>'
+      + '<button onclick="moveV('+vi+',1)" '+(vi===vendors.length-1?'disabled':'')+'>↓</button>'
+      + '</div></div>'
+      + rows + '</div>';
+  }).join("");
+  const grand = vendors.reduce((s,v)=> s + v.items.reduce((t,it)=> t + (it.checked?rowAmount(it):0), 0), 0);
+  document.getElementById("grand").textContent = "¥" + num(grand);
+}
+function escAttr(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;"); }
+
+function toggleItem(vi,ii,on){ vendors[vi].items[ii].checked = on; render(); }
+function editDetail(vi,ii,val){ vendors[vi].items[ii].detail = val; }
+function editPrice(vi,ii,val){
+  const it = vendors[vi].items[ii];
+  const n = Number(String(val).replace(/[^0-9.\-]/g,""))||0;
+  if (it.amount != null || !it.qty) { it.amount = n; delete it.qty; it.unit = it.unit||"式"; }
+  else it.price = n;
+  render();
+}
+function moveV(vi,dir){
+  const t = vendors[vi];
+  vendors[vi] = vendors[vi+dir];
+  vendors[vi+dir] = t;
+  render();
+}
+
+function makeEstimate(){
+  const items = [];
+  vendors.forEach(v => v.items.forEach(it => {
+    if (!it.checked) return;
+    const o = { detail: it.detail, unit: it.unit||"式" };
+    if (it.amount != null) o.amount = Number(it.amount)||0;
+    else { o.qty = Number(it.qty)||1; o.price = Number(it.price)||0; }
+    items.push(o);
+  }));
+  if (!items.length){ alert("項目が選択されていません。"); return; }
+  const first = vendors[0]||{};
+  const d = {
+    type: "estimate",
+    date: new Date().toLocaleDateString("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit"}).replace(/-/g,"/"),
+    workName: first.workName||"", siteAddr: first.siteAddr||"",
+    taxRate: 10, items
+  };
+  location.href = "estimate.html?d=" + b64encode(d);
+}
+</script>
+</body>
+</html>

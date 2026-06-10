@@ -95,6 +95,13 @@ https://j-site.github.io/-gyomu-tools/estimate.html?doc=<書類No>
   （業者データはあくまで下書き。宛名・書類No・敬称などはCrastore側で設定する）。
 - `?d=` のデータは base64url(UTF-8 JSON)。スキーマは documents/*.json と同じ。
 
+## 業者見積の合算（combine.html）
+複数業者からの返信リンクをまとめて貼り付けると、業者ごとの内訳（金額把握用）を表示。
+項目の取捨選択・単価の上乗せ編集・業者単位の並べ替え（工程順）ができ、
+「見積書にまとめる」で1枚の編集可能な見積書（estimate.html?d=）に統合される。
+ユーザーから複数の業者リンクを渡されて合算を頼まれた場合、Claude側でJSONを合算して
+documents/ に正式発行してもよい（remarkの【◯◯入力分】タグは最終見積から除去すること）。
+
 ## その他
 - `estimate.html` はブラウザ単体でも新規作成できる（`?doc=`無しで開くと空フォーム）。
 - ロゴ/QRは `assets/` に原本、`estimate.html` 内にbase64埋め込み済み。

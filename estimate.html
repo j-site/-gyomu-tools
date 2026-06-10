@@ -532,22 +532,55 @@ document.getElementById("tadashi").addEventListener("input", function(){
   data.tadashi = this.textContent;
 });
 
-/* ===== 顧客マスタ（documents/clients.json） ===== */
-let clients = [];
+/* ===== 顧客マスタ =====
+   候補は3つのソースを自動マージ:
+   1. documents/clients.json（手動登録・全端末共通）
+   2. documents/index.json の発行済み書類の宛名（発行するたび自動で増える・全端末共通）
+   3. この端末で印刷した宛名（localStorage・住所と敬称も保持） */
+let clients = [], clientsBase = [];
+function buildClientOptions(){
+  const sel = document.getElementById("clientSelect");
+  while (sel.options.length > 1) sel.remove(1);
+  const seen = {}, merged = [];
+  const add = c => {
+    if (!c || !c.name) return;
+    if (seen[c.name]){ // 後から来た情報で住所・敬称を補完
+      const e = merged[seen[c.name]-1];
+      if (!e.addr && c.addr) e.addr = c.addr;
+      if (!e.honorific && c.honorific) e.honorific = c.honorific;
+      return;
+    }
+    seen[c.name] = merged.push({ name:c.name, honorific:c.honorific, addr:c.addr });
+  };
+  clientsBase.forEach(add);
+  JSON.parse(localStorage.getItem("crastore_clients")||"[]").forEach(add);
+  docIndex.forEach(d => add({ name: d.clientName, honorific: d.honorific }));
+  clients = merged;
+  clients.forEach((c,i) => {
+    const o = document.createElement("option");
+    o.value = i; o.textContent = c.name;
+    sel.appendChild(o);
+  });
+}
 function loadClients(){
   fetch("documents/clients.json", { cache:"no-store" })
     .then(r => r.ok ? r.json() : [])
-    .then(list => {
-      clients = list;
-      const sel = document.getElementById("clientSelect");
-      list.forEach((c,i) => {
-        const o = document.createElement("option");
-        o.value = i; o.textContent = c.name;
-        sel.appendChild(o);
-      });
-    })
+    .then(list => { clientsBase = list; buildClientOptions(); })
     .catch(()=>{});
 }
+// 印刷（=発行）したらこの端末の顧客リストに自動保存
+window.addEventListener("beforeprint", function(){
+  const name = document.getElementById("clientName").textContent.trim();
+  if (!name) return;
+  const list = JSON.parse(localStorage.getItem("crastore_clients")||"[]");
+  const c = { name,
+    honorific: document.getElementById("honorific").textContent,
+    addr: document.getElementById("siteAddr").textContent.trim() };
+  const i = list.findIndex(x => x.name === name);
+  if (i >= 0) list[i] = c; else list.push(c);
+  localStorage.setItem("crastore_clients", JSON.stringify(list));
+  buildClientOptions();
+});
 function pickClient(i){
   if (i === "") return;
   const c = clients[+i];
@@ -570,7 +603,7 @@ let docIndex = [];
 function loadDocIndex(){
   fetch("documents/index.json", { cache:"no-store" })
     .then(r => r.ok ? r.json() : [])
-    .then(list => { docIndex = list; })
+    .then(list => { docIndex = list; buildClientOptions(); })
     .catch(()=>{});
 }
 function suggestDocNo(){

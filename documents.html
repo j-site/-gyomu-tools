@@ -25,9 +25,12 @@
   .tag.invoice { background:#c0622d; }
   .tag.estimate { background:#497B9F; }
   .tag.receipt { background:#2e7d32; }
-  .pay { font-size:11px; border-radius:4px; padding:2px 7px; white-space:nowrap; font-weight:bold; }
-  .pay.unpaid { background:#fdecea; color:#c62828; border:1px solid #c62828; }
-  .pay.paid { background:#e8f5e9; color:#2e7d32; border:1px solid #2e7d32; }
+  .pay { font-size:12px; border-radius:12px; padding:4px 10px; white-space:nowrap; font-weight:bold;
+    cursor:pointer; font-family:inherit; min-height:28px; }
+  .pay.unpaid { background:#fdecea; color:#c62828; border:1.5px solid #c62828; }
+  .pay.paid { background:#e8f5e9; color:#2e7d32; border:1.5px solid #2e7d32; }
+  .pay:active { transform:scale(.95); }
+  .hint { font-size:12px; color:#888; margin:0 2px 10px; }
   .meta { flex:1; min-width:0; }
   .meta .no { font-size:13px; color:#666; }
   .meta .nm { font-size:15px; font-weight:bold; }
@@ -48,22 +51,38 @@
     <button data-f="receipt" onclick="setFilter('receipt')">領収(RC)</button>
     <button data-f="unpaid" onclick="setFilter('unpaid')">未入金</button>
   </div>
+  <p class="hint">💡 請求書の「未入金/入金済」バッジはタップで切り替えられます。</p>
   <ul id="list"><li class="empty">読み込み中…</li></ul>
 </div>
 <script>
 let docs = [], filter = "all";
+
+/* 入金ステータス: この端末での切替(localStorage)が index.json の値より優先される */
+function payOverrides(){ return JSON.parse(localStorage.getItem("crastore_paystatus")||"{}"); }
+function payStatus(d){ return payOverrides()[d.docNo] || d.status || "unpaid"; }
+function togglePay(e, docNo){
+  e.preventDefault(); e.stopPropagation();   // 親リンクへの遷移を止める
+  const ov = payOverrides();
+  const cur = ov[docNo] || (docs.find(d=>d.docNo===docNo)||{}).status || "unpaid";
+  ov[docNo] = cur === "paid" ? "unpaid" : "paid";
+  localStorage.setItem("crastore_paystatus", JSON.stringify(ov));
+  render();
+}
 function render(){
   const ul = document.getElementById("list");
   const items = docs.filter(d =>
     filter==="all" ? true :
-    filter==="unpaid" ? (d.type==="invoice" && d.status!=="paid") :
+    filter==="unpaid" ? (d.type==="invoice" && payStatus(d)!=="paid") :
     d.type===filter);
   if (!items.length){ ul.innerHTML = '<li class="empty">該当する書類がありません。</li>'; return; }
   ul.innerHTML = items.map(d => {
     const label = d.type==="invoice" ? "請求書" : d.type==="receipt" ? "領収書" : "見積書";
-    // 請求書には入金ステータスバッジを表示（statusはindex.jsonで管理）
+    // 請求書には入金ステータスバッジを表示。タップで切替（この端末に保存され index.json より優先）
+    const st = payStatus(d);
     const pay = d.type==="invoice"
-      ? (d.status==="paid" ? '<span class="pay paid">入金済</span>' : '<span class="pay unpaid">未入金</span>')
+      ? (st==="paid"
+          ? '<button class="pay paid" onclick="togglePay(event,\''+d.docNo+'\')">✓ 入金済</button>'
+          : '<button class="pay unpaid" onclick="togglePay(event,\''+d.docNo+'\')">未入金</button>')
       : "";
     return '<a class="doc" href="estimate.html?doc='+encodeURIComponent(d.docNo)+'">'
       + '<span class="tag '+d.type+'">'+label+'</span>'

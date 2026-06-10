@@ -60,10 +60,16 @@ https://j-site.github.io/-gyomu-tools/estimate.html?doc=<書類No>
 ### 入金ステータス（請求書）
 `documents/index.json` の請求書エントリに `"status": "unpaid"` / `"paid"` を付けると
 一覧ページで「未入金/入金済」バッジが表示される。**入金確認の連絡を受けたら paid に更新する。**
+※ 一覧ページのバッジはタップでも切替可能だが、それは端末ローカル(localStorage)の上書き。
+全端末に反映する正式な記録は index.json の status なので、入金連絡を受けたら必ずここを更新する。
 
 ### 顧客マスタ
-`documents/clients.json` = `[{ "name", "honorific", "addr" }]`。
-estimate.html の顧客選択プルダウンに反映される。新規顧客の書類を作ったらここにも追記する。
+顧客プルダウンの候補は以下を自動マージして表示される:
+1. `documents/clients.json`（手動登録: `[{ "name", "honorific", "addr" }]`）
+2. `documents/index.json` の発行済み書類の宛名（発行のたび自動で増える）
+3. ユーザーの端末で印刷した宛名（localStorage）
+住所・敬称まで全端末で共有したい顧客は clients.json に追記する。
+**index.json に新規書類を追加するときは `honorific` も含めること**（顧客マスタに敬称が引き継がれる）。
 
 ### 書類No（番号）ルール
 - 見積書 = **MS** / 請求書 = **IV** / 領収書 = **RC** で始まる

@@ -18,9 +18,12 @@
     font-size:13px; cursor:pointer; min-height:40px; }
   .filters button.active { background:#497B9F; color:#fff; border-color:#497B9F; }
   ul { list-style:none; margin:0; padding:0; }
-  a.doc { display:flex; align-items:center; gap:10px; background:#fff; text-decoration:none; color:#222;
-    padding:13px 14px; border-radius:6px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  li.docrow { display:flex; align-items:stretch; gap:0; background:#fff; border-radius:6px;
+    margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden; }
+  a.doc { flex:1; display:flex; align-items:center; gap:10px; text-decoration:none; color:#222;
+    padding:13px 14px; min-width:0; }
   a.doc:active { background:#eef6fb; }
+  .paywrap { display:flex; align-items:center; padding-right:12px; }
   .tag { font-size:11px; color:#fff; border-radius:4px; padding:2px 7px; white-space:nowrap; }
   .tag.invoice { background:#c0622d; }
   .tag.estimate { background:#497B9F; }
@@ -77,19 +80,23 @@ function render(){
   if (!items.length){ ul.innerHTML = '<li class="empty">該当する書類がありません。</li>'; return; }
   ul.innerHTML = items.map(d => {
     const label = d.type==="invoice" ? "請求書" : d.type==="receipt" ? "領収書" : "見積書";
-    // 請求書には入金ステータスバッジを表示。タップで切替（この端末に保存され index.json より優先）
+    // 入金バッジはリンクの外に配置（タップしても書類が開かないように）
     const st = payStatus(d);
     const pay = d.type==="invoice"
-      ? (st==="paid"
+      ? '<span class="paywrap">'
+        + (st==="paid"
           ? '<button class="pay paid" onclick="togglePay(event,\''+d.docNo+'\')">✓ 入金済</button>'
           : '<button class="pay unpaid" onclick="togglePay(event,\''+d.docNo+'\')">未入金</button>')
+        + '</span>'
       : "";
-    return '<a class="doc" href="estimate.html?doc='+encodeURIComponent(d.docNo)+'">'
+    return '<li class="docrow">'
+      + '<a class="doc" href="estimate.html?doc='+encodeURIComponent(d.docNo)+'">'
       + '<span class="tag '+d.type+'">'+label+'</span>'
-      + '<span class="meta"><span class="nm">'+(d.clientName||"")+' '+(d.honorific||"御中")+' '+pay+'</span>'
+      + '<span class="meta"><span class="nm">'+(d.clientName||"")+' '+(d.honorific||"御中")+'</span>'
       + '<span class="sub">'+(d.workName||"")+'</span>'
       + '<span class="no">'+d.docNo+'　'+(d.date||"")+'</span></span>'
-      + '<span class="chev">›</span></a>';
+      + '<span class="chev">›</span></a>'
+      + pay + '</li>';
   }).join("");
 }
 function setFilter(f){

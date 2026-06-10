@@ -57,6 +57,14 @@ https://j-site.github.io/-gyomu-tools/estimate.html?doc=<書類No>
 `documents/index.json` は一覧ページ `documents.html` 用の目録。
 新規書類を追加したら、ここにも1件追記すると一覧に表示される（任意・無くてもURL直打ちで開ける）。
 
+## 業者見積入力フォーム（vendor.html）
+下請け業者に `vendor.html` のURLを送ると、業者が項目・金額を入力して
+「送信用リンク」（`estimate.html?d=<base64データ>`）を作成し、LINE等で返信してくる。
+- そのリンクを開くと見積書フォーマットに反映された**編集可能な下書き**が表示される。
+- 正式発行する場合は、内容を確認・編集のうえ `documents/<書類No>.json` として保存する
+  （業者データはあくまで下書き。宛名・書類No・敬称などはCrastore側で設定する）。
+- `?d=` のデータは base64url(UTF-8 JSON)。スキーマは documents/*.json と同じ。
+
 ## その他
 - `estimate.html` はブラウザ単体でも新規作成できる（`?doc=`無しで開くと空フォーム）。
 - ロゴ/QRは `assets/` に原本、`estimate.html` 内にbase64埋め込み済み。

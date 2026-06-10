@@ -465,9 +465,20 @@ bindField("workName","workName");
 bindField("validUntil","validUntil");
 bindField("remark","remark");
 
-const _docId = new URLSearchParams(location.search).get("doc");
+const _params = new URLSearchParams(location.search);
+const _docId = _params.get("doc");
+const _draft = _params.get("d");
 if (_docId) {
   loadDoc(_docId);          // 保存済み書類を表示
+} else if (_draft) {
+  // 業者入力フォーム(vendor.html)等から渡された下書きデータ（URL埋め込み・編集可能）
+  try {
+    const json = decodeURIComponent(escape(atob(_draft.replace(/-/g,"+").replace(/_/g,"/"))));
+    applyData(JSON.parse(json));
+  } catch (e) {
+    console.error("下書きデータの読み込みに失敗:", e);
+    renderRows(); recalc();
+  }
 } else {
   renderRows();             // 通常（新規作成）
   recalc();

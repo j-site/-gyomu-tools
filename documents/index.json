@@ -1,4 +1,4 @@
 [
-  { "docNo": "IV260609002", "type": "invoice",  "clientName": "株式会社ひまわり", "date": "2026/06/09", "workName": "内装工事" },
+  { "docNo": "IV260609002", "type": "invoice",  "clientName": "株式会社ひまわり", "date": "2026/06/09", "workName": "内装工事", "status": "unpaid" },
   { "docNo": "MS260513001", "type": "estimate", "clientName": "株式会社ひまわり", "date": "2026/05/13", "workName": "内装工事" }
 ]

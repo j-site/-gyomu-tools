@@ -42,11 +42,22 @@
 <body>
 <div class="wrap">
   <div class="top-line"></div>
-  <h1>見積項目 入力フォーム</h1>
-  <p class="lead">株式会社Crastoreへ提出する見積の項目・金額をご入力ください。<br>
+  <h1>見積・請求 入力フォーム</h1>
+  <p class="lead">株式会社Crastoreへ提出する見積／請求の項目・金額をご入力ください。<br>
   入力後「送信用リンクを作成」を押し、表示されたリンクをLINE等でご返信ください。</p>
 
   <div class="card">
+    <label>書類の種類</label>
+    <div style="display:flex; gap:8px;">
+      <label style="flex:1; display:flex; align-items:center; gap:6px; margin:0; padding:10px;
+        border:1px solid #c2c8cf; border-radius:6px; font-size:15px; color:#222; font-weight:normal; cursor:pointer;">
+        <input type="radio" name="docType" value="estimate" checked style="width:auto;"> 見積
+      </label>
+      <label style="flex:1; display:flex; align-items:center; gap:6px; margin:0; padding:10px;
+        border:1px solid #c2c8cf; border-radius:6px; font-size:15px; color:#222; font-weight:normal; cursor:pointer;">
+        <input type="radio" name="docType" value="invoice" style="width:auto;"> 請求
+      </label>
+    </div>
     <label>貴社名（業者名）</label>
     <input id="vendorName" placeholder="例）株式会社◯◯工務店">
     <label>工事名・内容</label>
@@ -116,7 +127,7 @@ function makeLink(){
   const remark = [vendor ? "【"+vendor+" 入力分】" : "", document.getElementById("remark").value.trim()]
     .filter(Boolean).join(" ");
   const d = {
-    type: "estimate",
+    type: document.querySelector('input[name="docType"]:checked').value,
     date: new Date().toLocaleDateString("ja-JP", {year:"numeric",month:"2-digit",day:"2-digit"}).replace(/-/g,"/"),
     workName: document.getElementById("workName").value.trim(),
     siteAddr: document.getElementById("siteAddr").value.trim(),

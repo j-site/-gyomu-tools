@@ -24,6 +24,10 @@
   .tag { font-size:11px; color:#fff; border-radius:4px; padding:2px 7px; white-space:nowrap; }
   .tag.invoice { background:#c0622d; }
   .tag.estimate { background:#497B9F; }
+  .tag.receipt { background:#2e7d32; }
+  .pay { font-size:11px; border-radius:4px; padding:2px 7px; white-space:nowrap; font-weight:bold; }
+  .pay.unpaid { background:#fdecea; color:#c62828; border:1px solid #c62828; }
+  .pay.paid { background:#e8f5e9; color:#2e7d32; border:1px solid #2e7d32; }
   .meta { flex:1; min-width:0; }
   .meta .no { font-size:13px; color:#666; }
   .meta .nm { font-size:15px; font-weight:bold; }
@@ -35,12 +39,14 @@
 <body>
 <div class="wrap">
   <div class="top-line"></div>
-  <h1>発行済み 見積書・請求書</h1>
+  <h1>発行済み書類（見積・請求・領収）</h1>
   <a class="new" href="estimate.html">＋ 新規作成（空フォーム）</a>
   <div class="filters">
     <button data-f="all" class="active" onclick="setFilter('all')">すべて</button>
-    <button data-f="estimate" onclick="setFilter('estimate')">見積書(MS)</button>
-    <button data-f="invoice" onclick="setFilter('invoice')">請求書(IV)</button>
+    <button data-f="estimate" onclick="setFilter('estimate')">見積(MS)</button>
+    <button data-f="invoice" onclick="setFilter('invoice')">請求(IV)</button>
+    <button data-f="receipt" onclick="setFilter('receipt')">領収(RC)</button>
+    <button data-f="unpaid" onclick="setFilter('unpaid')">未入金</button>
   </div>
   <ul id="list"><li class="empty">読み込み中…</li></ul>
 </div>
@@ -48,13 +54,20 @@
 let docs = [], filter = "all";
 function render(){
   const ul = document.getElementById("list");
-  const items = docs.filter(d => filter==="all" || d.type===filter);
+  const items = docs.filter(d =>
+    filter==="all" ? true :
+    filter==="unpaid" ? (d.type==="invoice" && d.status!=="paid") :
+    d.type===filter);
   if (!items.length){ ul.innerHTML = '<li class="empty">該当する書類がありません。</li>'; return; }
   ul.innerHTML = items.map(d => {
-    const label = d.type==="invoice" ? "請求書" : "見積書";
+    const label = d.type==="invoice" ? "請求書" : d.type==="receipt" ? "領収書" : "見積書";
+    // 請求書には入金ステータスバッジを表示（statusはindex.jsonで管理）
+    const pay = d.type==="invoice"
+      ? (d.status==="paid" ? '<span class="pay paid">入金済</span>' : '<span class="pay unpaid">未入金</span>')
+      : "";
     return '<a class="doc" href="estimate.html?doc='+encodeURIComponent(d.docNo)+'">'
       + '<span class="tag '+d.type+'">'+label+'</span>'
-      + '<span class="meta"><span class="nm">'+(d.clientName||"")+' 御中</span>'
+      + '<span class="meta"><span class="nm">'+(d.clientName||"")+' '+(d.honorific||"御中")+' '+pay+'</span>'
       + '<span class="sub">'+(d.workName||"")+'</span>'
       + '<span class="no">'+d.docNo+'　'+(d.date||"")+'</span></span>'
       + '<span class="chev">›</span></a>';

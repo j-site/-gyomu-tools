@@ -1,0 +1,28 @@
+{
+  "type": "estimate",
+  "date": "2026/06/11",
+  "clientName": "山根",
+  "honorific": "様",
+  "docNo": "MS260611001",
+  "siteAddr": "大阪府東大阪市岩田町3丁目5-4",
+  "workName": "山根様邸内装改装工事",
+  "validUntil": "提出日より1ヶ月以内",
+  "remark": "2026/5/24発行の御見積書（No.26052411）を変更差額一覧（令和8年6月改訂版）に基づき改訂したものです。西側・東側押入れ工事は取り止め。2階西側は畳表替えから畳新調等に変更。内部建具は片開きドア（LAC）特注1ヵ所に変更。",
+  "taxRate": 10,
+  "items": [
+    { "detail": "解体", "unit": "式", "amount": 116167 },
+    { "detail": "玄関（床組・CF張り1㎡分およびコンセント1ヵ所 追加）", "unit": "式", "amount": 86661 },
+    { "detail": "キッチン", "unit": "式", "amount": 156995 },
+    { "detail": "洗面所", "unit": "式", "amount": 82483 },
+    { "detail": "脱衣室", "unit": "式", "amount": 6899 },
+    { "detail": "浴室", "unit": "式", "amount": 209923 },
+    { "detail": "トイレ", "unit": "式", "amount": 51574 },
+    { "detail": "1階西側", "unit": "式", "amount": 189877 },
+    { "detail": "1階東側（押入れ内部クロス施工 追加）", "unit": "式", "amount": 171427 },
+    { "detail": "2階西側（畳新調6畳・畳処分・天井合板張り・襖クロス張り）", "unit": "式", "amount": 116200 },
+    { "detail": "階段室", "unit": "式", "amount": 9500 },
+    { "detail": "内部建具（片開きドアLAC特注・組立設置1ヵ所）", "unit": "式", "amount": 99350 },
+    { "detail": "諸経費", "unit": "式", "amount": 24000 },
+    { "detail": "値引き", "unit": "式", "amount": -56 }
+  ]
+}

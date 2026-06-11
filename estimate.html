@@ -182,9 +182,11 @@
   @media print {
     body { background: #fff; padding: 0; }
     .toolbar { display: none; }
-    /* 画面と同じ用紙寸法(794×1123px=A4)のまま印刷し、内容が多い場合はJS(fitPrint)で1ページに自動縮小する */
-    .sheet-wrap { overflow: hidden; }
-    .sheet { box-shadow: none; margin: 0; }
+    /* 画面と同じ用紙寸法(794×1123px=A4)のまま印刷。内容が多い書類は
+       fitSheet が算出した --print-zoom で実レイアウトを縮小し、A4 1枚に収める。
+       transform は画面幅調整用なので印刷では解除する。 */
+    .sheet-wrap { overflow: visible; height: auto !important; }
+    .sheet { box-shadow: none; margin: 0; transform: none !important; zoom: var(--print-zoom, 1); }
     @page { size: A4; margin: 0; }
   }
 </style>
@@ -494,6 +496,7 @@ function addRow(){
 
 /* 画面幅に合わせて用紙(A4=794px)を縮小表示。印刷時はCSSで解除されA4出力 */
 const SHEET_W = 794;
+const PRINT_PAGE_H = 1120; // A4@96dpi(1123px)に約3pxの安全マージン
 function fitSheet(){
   const wrap = document.getElementById("sheetWrap");
   const sheet = document.getElementById("sheet");
@@ -501,25 +504,15 @@ function fitSheet(){
   const scale = Math.min(1, wrap.clientWidth / SHEET_W);
   sheet.style.transform = scale < 1 ? "scale(" + scale + ")" : "none";
   wrap.style.height = (sheet.offsetHeight * scale) + "px";
+  /* 印刷用: 内容の高さからA4 1枚(=1120px)に収まるzoom倍率を算出し、CSS変数に保存。
+     @media print 内で zoom: var(--print-zoom) として適用する。
+     transformと違いzoomは実レイアウトを縮小するため、Safariでもページ分割に反映され
+     1ページに収まる（offsetHeightはtransformの影響を受けない実寸なので測定に使える）。 */
+  const printZoom = Math.min(1, PRINT_PAGE_H / sheet.offsetHeight);
+  sheet.style.setProperty("--print-zoom", printZoom);
 }
 window.addEventListener("resize", fitSheet);
 window.addEventListener("orientationchange", fitSheet);
-
-/* 印刷時: 用紙の内容高さを測り、A4 1枚(=1123px)に収まるよう自動縮小する。
-   短い書類は等倍のまま、明細が多い書類だけ縮小される。afterprintで画面表示に戻す */
-const PRINT_PAGE_H = 1120; // A4@96dpi(1123px)に約3pxの安全マージン
-function fitPrint(){
-  const wrap = document.getElementById("sheetWrap");
-  const sheet = document.getElementById("sheet");
-  if (!wrap || !sheet) return;
-  sheet.style.transform = "none";
-  const H = sheet.offsetHeight;
-  const s = Math.min(1, PRINT_PAGE_H / H);
-  sheet.style.transform = s < 1 ? "scale(" + s + ")" : "none";
-  wrap.style.height = (H * s) + "px";
-}
-window.addEventListener("beforeprint", fitPrint);
-window.addEventListener("afterprint", fitSheet);
 
 // 敬称トグル（御中 ↔ 様）
 document.getElementById("honorific").addEventListener("click", function(){

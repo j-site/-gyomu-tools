@@ -1,7 +1,8 @@
 {
   "type": "invoice",
   "date": "2026/06/09",
-  "clientName": "株式会社ひまわり",
+  "clientName": "SWATサービス",
+  "honorific": "御中",
   "docNo": "IV260609002",
   "siteAddr": "大阪市西成区萩ノ茶屋2-5-8",
   "workName": "内装工事",

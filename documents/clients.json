@@ -1,4 +1,5 @@
 [
   { "name": "株式会社ひまわり", "honorific": "御中", "addr": "大阪市西成区萩ノ茶屋2-5-8" },
-  { "name": "山根", "honorific": "様", "addr": "大阪府東大阪市岩田町3丁目5-4" }
+  { "name": "山根", "honorific": "様", "addr": "大阪府東大阪市岩田町3丁目5-4" },
+  { "name": "SWATサービス", "honorific": "御中", "addr": "" }
 ]

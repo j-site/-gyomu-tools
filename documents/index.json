@@ -1,5 +1,6 @@
 [
   { "docNo": "MS260611001", "type": "estimate", "clientName": "山根", "honorific": "様", "date": "2026/06/11", "workName": "山根様邸内装改装工事" },
-  { "docNo": "IV260609002", "type": "invoice",  "clientName": "株式会社ひまわり", "date": "2026/06/09", "workName": "内装工事", "status": "unpaid" },
-  { "docNo": "MS260513001", "type": "estimate", "clientName": "株式会社ひまわり", "date": "2026/05/13", "workName": "内装工事" }
+  { "docNo": "RC260611003", "type": "receipt",  "clientName": "SWATサービス", "honorific": "御中", "date": "2026/06/11", "workName": "内装工事" },
+  { "docNo": "IV260609002", "type": "invoice",  "clientName": "SWATサービス", "honorific": "御中", "date": "2026/06/09", "workName": "内装工事", "status": "paid" },
+  { "docNo": "MS260513001", "type": "estimate", "clientName": "SWATサービス", "honorific": "御中", "date": "2026/05/13", "workName": "内装工事" }
 ]

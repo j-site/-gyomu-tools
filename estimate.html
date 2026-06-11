@@ -538,7 +538,7 @@ function applyData(d){
   }
   if (typeof d.taxRate === "number") data.taxRate = d.taxRate;
   // 敬称（御中 / 様）
-  if (d.honorific) document.getElementById("honorific").textContent = d.honorific;
+  if ("honorific" in d) document.getElementById("honorific").textContent = d.honorific;
   // 領収書用フィールド
   if (d.amount != null) data.receiptAmount = d.amount;
   if (d.tadashi != null) { data.tadashi = d.tadashi; document.getElementById("tadashi").textContent = d.tadashi; }

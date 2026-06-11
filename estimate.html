@@ -182,14 +182,9 @@
   @media print {
     body { background: #fff; padding: 0; }
     .toolbar { display: none; }
-    .sheet-wrap { height: auto !important; overflow: visible; }
-    .sheet { box-shadow: none; margin: 0; width: 100%; min-height: auto; padding: 12mm 12mm; transform: none !important; }
-    table.items td { height: 27px; }
-    .amount-row { margin: 10px 0 18px; }
-    .info-wrap { margin-bottom: 12px; }
-    .bank { margin: 14px auto 6px; padding: 12px 10px; }
-    .bank-note { margin-bottom: 4px; }
-    .footer { margin-top: 14px; }
+    /* 画面と同じ用紙寸法(794×1123px=A4)のまま印刷し、内容が多い場合はJS(fitPrint)で1ページに自動縮小する */
+    .sheet-wrap { overflow: hidden; }
+    .sheet { box-shadow: none; margin: 0; }
     @page { size: A4; margin: 0; }
   }
 </style>
@@ -509,6 +504,22 @@ function fitSheet(){
 }
 window.addEventListener("resize", fitSheet);
 window.addEventListener("orientationchange", fitSheet);
+
+/* 印刷時: 用紙の内容高さを測り、A4 1枚(=1123px)に収まるよう自動縮小する。
+   短い書類は等倍のまま、明細が多い書類だけ縮小される。afterprintで画面表示に戻す */
+const PRINT_PAGE_H = 1120; // A4@96dpi(1123px)に約3pxの安全マージン
+function fitPrint(){
+  const wrap = document.getElementById("sheetWrap");
+  const sheet = document.getElementById("sheet");
+  if (!wrap || !sheet) return;
+  sheet.style.transform = "none";
+  const H = sheet.offsetHeight;
+  const s = Math.min(1, PRINT_PAGE_H / H);
+  sheet.style.transform = s < 1 ? "scale(" + s + ")" : "none";
+  wrap.style.height = (H * s) + "px";
+}
+window.addEventListener("beforeprint", fitPrint);
+window.addEventListener("afterprint", fitSheet);
 
 // 敬称トグル（御中 ↔ 様）
 document.getElementById("honorific").addEventListener("click", function(){

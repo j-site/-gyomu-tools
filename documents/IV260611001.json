@@ -1,0 +1,12 @@
+{
+  "type": "invoice",
+  "date": "2026/06/11",
+  "clientName": "佐々",
+  "honorific": "様",
+  "docNo": "IV260611001",
+  "workName": "工事仲介手数料",
+  "taxRate": 10,
+  "items": [
+    { "detail": "工事仲介手数料", "unit": "式", "amount": 44291 }
+  ]
+}

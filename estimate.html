@@ -151,6 +151,7 @@
   body.mode-letter .not-letter { display: none !important; }
   body.mode-letter .info-wrap .qr { display: none !important; }
   body.mode-letter .info { width: 80% !important; }
+  body.mode-letter .footer { display: none !important; }
   /* 領収書モード: 明細・合計表は使わない */
   body.mode-receipt table.items, body.mode-receipt table.totals { display: none !important; }
 
@@ -192,6 +193,19 @@
     margin: 6px 4px 6px 20px; white-space: pre-wrap;
   }
   .letter-ijo { text-align: right; font-size: 14px; margin: 6px 4px 10px; }
+  .letter-contact {
+    border: 1px solid #999; padding: 10px 14px; margin-top: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; line-height: 1.9;
+  }
+  .letter-contact-title { font-size: 12px; font-weight: bold; color: #444; margin-bottom: 2px; }
+  .letter-contact-name { font-size: 14px; font-weight: bold; }
+  .letter-contact-right { text-align: center; font-size: 11px; color: #555; min-width: 100px; }
+  .letter-qr-ph {
+    width: 84px; height: 84px; border: 1px dashed #bbb; margin: 4px auto 0;
+    display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 11px;
+  }
+  #letterLineQr { width: 84px; height: 84px; display: none; margin: 4px auto 0; }
   .letter-subject:focus, .letter-body:focus, .letter-ki-body:focus { background: #eef6fb; }
 
   /* ===== スマホ対応 ===== */
@@ -294,6 +308,19 @@
         <div class="letter-ki-title">記</div>
         <div class="letter-ki-body" id="letterKi" contenteditable="true"></div>
         <div class="letter-ijo">以上</div>
+      </div>
+      <div class="letter-contact">
+        <div class="letter-contact-left">
+          <div class="letter-contact-title">■ お問い合わせ先</div>
+          <div class="letter-contact-name">株式会社Crastore</div>
+          <div>〒541-0057 大阪市中央区北久宝寺2-6-10<br>ニューライフ船場404号</div>
+          <div>TEL：050-3700-3996</div>
+        </div>
+        <div class="letter-contact-right">
+          <div>LINE でのお問い合わせ</div>
+          <img id="letterLineQr" src="" alt="LINE QR">
+          <div id="letterLineQrPh" class="letter-qr-ph">LINE QR</div>
+        </div>
       </div>
     </div>
 
@@ -526,6 +553,12 @@ function applyData(d){
     const kiSec = document.getElementById("letterKiSection");
     if (kiSec && document.body.classList.contains("viewing") && !(data.ki || "").trim())
       kiSec.style.display = "none";
+    if (d.lineQr) {
+      const qrImg = document.getElementById("letterLineQr");
+      const qrPh  = document.getElementById("letterLineQrPh");
+      if (qrImg) { qrImg.src = d.lineQr; qrImg.style.display = "block"; }
+      if (qrPh)  qrPh.style.display = "none";
+    }
   }
 }
 

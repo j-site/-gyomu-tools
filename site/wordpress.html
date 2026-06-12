@@ -581,7 +581,7 @@ body.admin-bar #crastore-lp .cl-header { top: 32px; }
       <h2 class="sec-title">会社概要</h2>
       <table class="company-table reveal">
         <tr><th>会社名</th><td>株式会社Crastore(クラストア)</td></tr>
-        <tr><th>所在地</th><td>〒541-0057 大阪市中央区北久宝寺町2-6-10 ニューライフ船場404号</td></tr>
+        <tr><th>所在地</th><td>〒541-0057 大阪市中央区北久宝寺町2-6-10-404</td></tr>
         <tr><th>TEL</th><td><a href="tel:05037003996">050-3700-3996</a></td></tr>
         <tr><th>営業時間</th><td>9:00〜17:00</td></tr>
         <tr><th>事業内容</th><td>改修・リフォーム工事／各種建設工事／賃貸物件管理／建材・設備の販売／災害時保険を活用した修繕工事</td></tr>
@@ -645,15 +645,20 @@ body.admin-bar #crastore-lp .cl-header { top: 32px; }
   }
 
   // scroll reveal
+  var reveals = document.querySelectorAll('#crastore-lp .reveal');
   if ('IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
         if (en.isIntersecting) { en.target.classList.add('on'); io.unobserve(en.target); }
       });
-    }, { threshold: 0.15 });
-    document.querySelectorAll('#crastore-lp .reveal').forEach(function (el) { io.observe(el); });
+    }, { threshold: 0, rootMargin: '0px 0px -8% 0px' });
+    reveals.forEach(function (el) { io.observe(el); });
   } else {
-    document.querySelectorAll('#crastore-lp .reveal').forEach(function (el) { el.classList.add('on'); });
+    reveals.forEach(function (el) { el.classList.add('on'); });
   }
+  // 保険: 何らかの理由で発火しなかった要素も必ず表示する
+  setTimeout(function () {
+    reveals.forEach(function (el) { el.classList.add('on'); });
+  }, 1500);
 })();
 </script>
